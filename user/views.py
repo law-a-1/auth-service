@@ -3,6 +3,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework import status
 from .serializers import UserSerializer
 from .models import User
 import jwt, datetime
@@ -57,13 +58,16 @@ class UserView(APIView):
 
 		if not token:
 			raise AuthenticationFailed('Unauthenticated!')
-		
+
 		try:
 			payload = jwt.decode(token,'secret',algorithms=['HS256'])
-		except jwt.ExpiredSignatureError:
-			raise AuthenticationFailed('Unauthenticated!')
-		except jwt.exceptions.InvalidSignatureError:
-			raise AuthenticationFailed('Invalid Token!')
+		except :
+			response = Response()
+			response.data = {
+				'message':'Invalid Token'
+			}
+
+			return Response(response.data, status=status.HTTP_401_UNAUTHORIZED)
 
 		user = User.objects.filter(id=payload['id']).first()
 		serializer = UserSerializer(user)
